@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div>
+    <h1>決済する</h1>
+    <input type="number" id="paymentAmount" placeholder="金額入力" max="10">
+    <button id="payButton">결제하기</button>
+    <hr>
+    <h1>決済情報を見る</h1>
+    <input type="text" id="myMerchantPaymentId" placeholder="決済IDを入力" max="30">
+    <button id="getPaymentDetail">検索する</button>
+    <button id="cancelPayment">キャンセルする</button>
+    <div class="d">
+
+    </div>
+  </div>
+  <script>
+    document.getElementById('payButton').addEventListener('click', function() {
+      const paymentAmount = document.getElementById('paymentAmount').value
+      fetch('/generate-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: paymentAmount
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const qrCodeUrl = data.qrCodeUrl
+        const merchantPaymentId = data.merchantPaymentId
+        const popupWindow = window.open(qrCodeUrl, '123asd', 'width=1200, height=720')
+        const urlParams = new URLSearchParams(window.location.search)
+        const requestUrl = `/payment-detail?merchantPaymentId=${encodeURIComponent(merchantPaymentId)}`
+        const fetchPaymentDetails = () => {
+          fetch(requestUrl, {
+            method: 'GET'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.resultInfo.code === "SUCCESS" && data.data.status === 'COMPLETED') {
+              window.location.href = `/payment-success?merchantPaymentId=${encodeURIComponent(merchantPaymentId)}`
+              clearInterval(intervalId)
+              popupWindow.close()
+            }
+          })
+          .catch(error => {
+            console.error('Request failed, retrying:', error)
+          })
+        }
+        const intervalId = setInterval(fetchPaymentDetails, 5000)
+      })
+      .catch(error => console.error('QR 코드 URL을 가져오는 데 실패했습니다:', error))
+    })
+    document.getElementById('getPaymentDetail').addEventListener('click', function() {
+      const myMerchantPaymentId = document.getElementById('myMerchantPaymentId').value
+      const requestUrl = `/payment-detail?merchantPaymentId=${encodeURIComponent(myMerchantPaymentId)}`
+      fetch(requestUrl, {
+        method: 'GET'
+      })
+      .then(response => response.json())
+      .then(data => {
+        let paymentDetailInfo = data
+        document.querySelector('.d').textContent = JSON.stringify(paymentDetailInfo, null, 2);
+      })
+      .catch(error => console.error('정보확인 불가', error))
+    })
+    document.getElementById('cancelPayment').addEventListener('click', function() {
+      const myMerchantPaymentId = document.getElementById('myMerchantPaymentId').value
+      const requestUrl = `/payment-cancel?merchantPaymentId=${encodeURIComponent(myMerchantPaymentId)}`
+
+      fetch(requestUrl, {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log(data)
+      })
+      .catch(error => console.error('정보확인 불가', error))
+    })
+  </script>
+</body>
+</html>

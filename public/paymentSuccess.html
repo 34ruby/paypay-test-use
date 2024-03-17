@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div class="d">
+  </div>
+  <div>
+    <ul>
+      <li class="paymentId"></li>
+      <li class="orderDescription"></li>
+      <li class="name"></li>
+    </ul>
+  </div>
+  <script>
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search)
+      const merchantPaymentId = urlParams.get('merchantPaymentId')
+      const requestUrl = `/payment-detail?merchantPaymentId=${encodeURIComponent(merchantPaymentId)}`
+      fetch(requestUrl, {
+        method: 'GET'
+      })
+      .then(response => response.json())
+      .then(data => {
+        let paymentDetailInfo = data.data
+        document.querySelector('.d').textContent = JSON.stringify(paymentDetailInfo, null, 2);
+        document.querySelector('.paymentId').textContent = `주문 아이디: ${paymentDetailInfo.merchantPaymentId}`
+        document.querySelector('.orderDescription').textContent = `주문 상품: ${paymentDetailInfo.orderDescription}`
+        document.querySelector('.name').textContent = `주문 상품 상세명: ${paymentDetailInfo.orderItems[0].name}`
+      })
+      .catch(error => console.error('정보확인 불가', error))
+    }
+  </script>
+</body>
+</html>
