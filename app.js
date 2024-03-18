@@ -1,4 +1,5 @@
 const express = require('express')
+const cors = require('cors');
 const app = express()
 const { generateQRCode } = require('./integrations/paypay/paypayConfig')
 const { getPaymentDetails } = require('./integrations/paypay/getPaymentDetails')
@@ -7,17 +8,20 @@ const { cancelPayment } = require('./integrations/paypay/cancelPayment')
 app.use(express.json())
 app.set('port', process.env.PORT || 3000)
 app.use(express.static('public'))
+app.use(cors());
 
-app.post('/generate-qr', (req, res) => {
-  const { amount } = req.body
-  generateQRCode(amount, (qrCodeUrl, merchantPaymentId) => {
+app.post('/api/create-qr', (req, res) => {
+  const payload = req.body;
+	console.log(payload)
+  generateQRCode(payload, (qrCodeUrl, merchantPaymentId) => {
     if (qrCodeUrl && merchantPaymentId) {
-      res.send({qrCodeUrl, merchantPaymentId})
+      res.send({qrCodeUrl, merchantPaymentId});
     } else {
-      res.status(500).send("QR Code creation failed")
+      res.status(500).send("QR Code creation failed");
     }
-  })
-})
+  });
+});
+
 
 app.get('/payment-success', (req, res) => {
   res.sendFile(__dirname + '/public/paymentSuccess.html')
